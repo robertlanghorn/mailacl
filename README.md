@@ -60,13 +60,15 @@ Once you have a GPG key, **export the key ID**:
 ```bash
 gpg --list-secret-keys --keyid-format LONG
 ```
-Copy your **key ID** and set it as an environment variable:
+Copy your **key ID** and **domain name** then set it as an environment variable:
 ```bash
-export MAILACL_GPG_KEY="YOUR-KEY-ID-HERE"
+export MAILACL_GPG_KEY="YOUR_GPG_KEY_ID"
+export MAILACL_DOMAIN="yourdomain.com"
 ```
 To make this permanent, add it to your shell configuration:
 ```bash
-echo 'export MAILACL_GPG_KEY="YOUR-KEY-ID-HERE"' >> ~/.bashrc
+echo 'export MAILACL_GPG_KEY="YOUR_GPG_KEY_ID"' >> ~/.bashrc
+echo 'export MAILACL_DOMAIN="yourdomain.com"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
