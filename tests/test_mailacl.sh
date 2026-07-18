@@ -287,6 +287,19 @@ test_reports_missing_interactive_input() {
     assert_contains "$output" "No identifier or email was supplied" "missing input error was not explained"
 }
 
+test_rejects_blank_interactive_identifier_before_key_access() {
+    local output status
+    set +e
+    output=$(printf '\n' | FAKE_GPG_MODE=list-fail run_mailacl 2>&1)
+    status=$?
+    set -e
+
+    [[ $status -ne 0 ]] || fail "blank interactive identifier unexpectedly succeeded"
+    assert_contains "$output" "Identifier must not be empty" "blank interactive identifier error was not explained"
+    assert_not_contains "$output" "invalid or not found" "blank interactive identifier accessed the configured secret key"
+    assert_not_contains "$output" "Generated MailACL email:" "blank interactive identifier emitted an address"
+}
+
 test_rejects_failed_or_empty_secret_export() {
     local mode
     for mode in export-fail export-empty; do
@@ -392,6 +405,7 @@ test_rejects_length_argument_in_verification_mode
 test_rejects_invalid_domain_labels
 test_rejects_invalid_color_mode
 test_reports_missing_interactive_input
+test_rejects_blank_interactive_identifier_before_key_access
 test_rejects_failed_or_empty_secret_export
 test_generation_does_not_require_openssl
 test_rejects_unknown_options
@@ -418,6 +432,7 @@ printf 'PASS: verification rejects length arguments\n'
 printf 'PASS: invalid domain labels are rejected\n'
 printf 'PASS: invalid color modes are rejected\n'
 printf 'PASS: missing interactive input is reported\n'
+printf 'PASS: blank interactive identifiers are rejected before key access\n'
 printf 'PASS: failed or empty secret exports are rejected\n'
 printf 'PASS: generation does not expose HMAC keys through openssl argv\n'
 printf 'PASS: unknown options are rejected\n'

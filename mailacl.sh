@@ -147,6 +147,27 @@ if ! command -v gpg &>/dev/null; then
     exit 1
 fi
 
+# Read input before accessing the configured secret key. A blank line is input,
+# but it is not a valid identifier and must never generate a hyphen-only alias.
+if (( $# >= 1 )); then
+    INPUT="$1"
+else
+    if ! read -r -p "Enter an identifier to generate or an email to verify: " INPUT; then
+        echo "❌ ERROR: No identifier or email was supplied."
+        exit 2
+    fi
+fi
+
+if [[ -z "$INPUT" ]]; then
+    echo "❌ ERROR: Identifier must not be empty."
+    exit 1
+fi
+
+if [[ "$INPUT" == *"@"* ]] && (( $# >= 2 )); then
+    echo "❌ ERROR: Verification mode does not accept SIGNATURE_LENGTH."
+    exit 2
+fi
+
 # Check if the specified GPG key is available as a secret key
 if ! gpg --list-secret-keys -- "$MAILACL_GPG_KEY" &>/dev/null; then
     echo "❌ ERROR: The GPG key '$MAILACL_GPG_KEY' is invalid or not found."
@@ -435,21 +456,6 @@ print(f"🧭 Strength: {label}")
 PY
 }
 
-# Read input from an argument when supplied; otherwise prompt interactively.
-if (( $# >= 1 )); then
-    INPUT="$1"
-else
-    if ! read -r -p "Enter an identifier to generate or an email to verify: " INPUT; then
-        echo "❌ ERROR: No identifier or email was supplied."
-        exit 2
-    fi
-fi
-
-if [[ "$INPUT" == *"@"* ]] && (( $# >= 2 )); then
-    echo "❌ ERROR: Verification mode does not accept SIGNATURE_LENGTH."
-    exit 2
-fi
-
 # Use the configured GPG key to derive the secret HMAC key once.
 if ! SECRET_KEY=$(derive_secret_key); then
     echo "❌ ERROR: Unable to export secret key for '$MAILACL_GPG_KEY'."
@@ -561,10 +567,6 @@ if [[ "$INPUT" == *"@"* ]]; then
 else
     # Generation Mode
     PREFIX="$INPUT"
-    if [[ -z "$PREFIX" ]]; then
-        echo "❌ ERROR: Identifier must not be empty."
-        exit 1
-    fi
     DOT_ATOM_PATTERN="^[A-Za-z0-9.!#\$%&'*+/=?^_\`{|}~-]+$"
     if [[ ! "$PREFIX" =~ $DOT_ATOM_PATTERN || "$PREFIX" == .* || "$PREFIX" == *. || "$PREFIX" == *..* ]]; then
         echo "❌ ERROR: Identifier must be email-safe ASCII dot-atom text without leading, trailing, or consecutive dots."
